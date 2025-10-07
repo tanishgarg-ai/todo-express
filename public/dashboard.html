@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+  <h2>Your Todo List</h2>
+
+  <form id="taskForm">
+    <input type="text" id="taskTitle" placeholder="New task..." required>
+    <button type="submit">Add</button>
+  </form>
+
+  <ul id="taskList"></ul>
+
+  <button id="logoutBtn">Logout</button>
+
+  <script>
+    async function loadTasks() {
+      const res = await fetch("/tasks");
+      if (!res.ok) return (window.location.href = "index.html");
+      const tasks = await res.json();
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+      tasks.forEach((t) => {
+        const li = document.createElement("li");
+        li.innerHTML = `${t.title} - ${t.status} 
+          <button onclick="updateTask('${t.id}')">Toggle</button>
+          <button onclick="deleteTask('${t.id}')">Delete</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById("taskForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await fetch("/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: taskTitle.value }),
+      });
+      taskTitle.value = "";
+      loadTasks();
+    });
+
+    async function updateTask(id) {
+      await fetch(`/tasks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed" }),
+      });
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch(`/tasks/${id}`, { method: "DELETE" });
+      loadTasks();
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await fetch("/logout");
+      window.location.href = "index.html";
+    });
+
+    loadTasks();
+  </script>
+</body>
+</html>
